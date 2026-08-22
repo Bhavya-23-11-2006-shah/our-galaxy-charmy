@@ -227,6 +227,68 @@ function bBg(){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
   scn.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:.9,sizeAttenuation:true,transparent:true,opacity:.65,blending:THREE.AdditiveBlending,depthWrite:false})));
 
+// === PLANETS ===
+(function addPlanets() {
+  const ambLight = new THREE.AmbientLight(0x8888cc, 1.5);
+  scn.add(ambLight);
+  const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+  dirLight.position.set(300, 400, 300);
+  scn.add(dirLight);
+
+  const planets = [
+    {r:28, col:0xf4b48a, x:-320, y:80,  z:-380, ring:false},
+    {r:18, col:0xc4a8f5, x:370,  y:-50, z:-460, ring:false},
+    {r:42, col:0xd0eaff, x:-480, y:160, z:-580, ring:true},
+    {r:14, col:0xf4a0b0, x:250,  y:200, z:-300, ring:false},
+    {r:22, col:0xf5c76b, x:-180, y:-160,z:-420, ring:false},
+  ];
+  planets.forEach(pd => {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(pd.r, 32, 32),
+      new THREE.MeshStandardMaterial({color:pd.col, roughness:0.6, metalness:0.1, emissive:pd.col, emissiveIntensity:0.3})
+    );
+    mesh.position.set(pd.x, pd.y, pd.z);
+    scn.add(mesh);
+    gsap.to(mesh.rotation, {y: Math.PI*2, duration:20+Math.random()*15, repeat:-1, ease:"none"});
+
+    // Glow halo
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(pd.r*1.25, 32, 32),
+      new THREE.MeshBasicMaterial({color:pd.col, transparent:true, opacity:0.07, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false})
+    );
+    halo.position.copy(mesh.position);
+    scn.add(halo);
+
+    // Ring
+    if (pd.ring) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(pd.r*1.5, pd.r*2.5, 64),
+        new THREE.MeshBasicMaterial({color:0xd0eaff, transparent:true, opacity:0.35, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false})
+      );
+      ring.position.copy(mesh.position);
+      ring.rotation.x = Math.PI/3;
+      scn.add(ring);
+    }
+  });
+
+  // Shooting stars
+  function spawnShootingStar() {
+    const sx = -500 + Math.random()*1000;
+    const sy = 100 + Math.random()*250;
+    const sz = -200 - Math.random()*200;
+    const len = 100 + Math.random()*150;
+    const pts = [new THREE.Vector3(sx,sy,sz), new THREE.Vector3(sx+len, sy-len*0.45, sz)];
+    const sg = new THREE.BufferGeometry().setFromPoints(pts);
+    const sm = new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:1, blending:THREE.AdditiveBlending, depthWrite:false});
+    const star = new THREE.Line(sg, sm);
+    scn.add(star);
+    gsap.to(star.position, {x:star.position.x+350, y:star.position.y-140, duration:1+Math.random()*0.8, ease:"power2.in", onComplete:()=>{scn.remove(star);sg.dispose();sm.dispose();}});
+    gsap.to(sm, {opacity:0, duration:0.7, delay:0.3, ease:"power2.in"});
+  }
+  (function loop(){setTimeout(()=>{spawnShootingStar();loop();}, 2000+Math.random()*3500);})();
+})();
+
+
   
 
 }
